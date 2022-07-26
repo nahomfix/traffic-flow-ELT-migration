@@ -67,13 +67,15 @@ x-airflow-common: &airflow-common
         postgres:
             condition: service_healthy
 
-x-redash-service: &redash-service
-    image: redash/redash:8.0.0.b32245
-    depends_on:
-        - postgres
-        - redis
-    env_file: .env
-    restart: always
+x-superset-image: &superset-image apache/superset:${TAG:-latest-dev}
+x-superset-depends-on: &superset-depends-on
+    - postgres
+    - redis
+x-superset-volumes:
+    &superset-volumes # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+    - superset_home:/app/superset_home
+    - ./docker-bootstrap.sh:/app/docker/docker-bootstrap.sh
+    - ./docker-init.sh:/app/docker/docker-init.sh
 
 services:
     postgres:
@@ -90,13 +92,13 @@ services:
         restart: always
 
     mysql:
-        image: mysql:8
+        image: mariadb
         restart: always
         env_file: .env
         ports:
             - "3306:3306"
-        # volumes:
-        #     - mysql-db-volume:/var/lib/mysql/data
+        volumes:
+            - mysql-db-volume:/var/lib/mysql
 
     airflow-webserver:
         <<: *airflow-common
@@ -241,48 +243,52 @@ services:
             - -c
             - airflow
 
-    server:
-        <<: *redash-service
-        command: server
-        ports:
-            - "5000:5000"
-        environment:
-            REDASH_WEB_WORKERS: 4
-
-    scheduler:
-        <<: *redash-service
-        command: scheduler
-        environment:
-            QUEUES: "celery"
-            WORKERS_COUNT: 1
-
-    scheduled_worker:
-        <<: *redash-service
-        command: worker
-        environment:
-            QUEUES: "scheduled_queries,schemas"
-            WORKERS_COUNT: 1
-
-    adhoc_worker:
-        <<: *redash-service
-        command: worker
-        environment:
-            QUEUES: "queries"
-            WORKERS_COUNT: 2
     redis:
         image: redis:5.0-alpine
         restart: always
 
-    nginx:
-        image: redash/nginx:latest
+    superset:
+        env_file: .env
+        image: *superset-image
+        container_name: superset_app
+        command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+        user: "root"
+        restart: unless-stopped
         ports:
-            - "80:80"
-        depends_on:
-            - server
-        links:
-            - server:redash
-        restart: always
+            - "8088:8088"
+        depends_on: *superset-depends-on
+        volumes: *superset-volumes
+
+    superset-init:
+        image: *superset-image
+        container_name: superset_init
+        command: ["/app/docker/docker-init.sh"]
+        env_file: .env
+        depends_on: *superset-depends-on
+        user: "root"
+        volumes: *superset-volumes
+
+    superset-worker:
+        image: *superset-image
+        container_name: superset_worker
+        command: ["/app/docker/docker-bootstrap.sh", "worker"]
+        env_file: .env
+        restart: unless-stopped
+        depends_on: *superset-depends-on
+        user: "root"
+        volumes: *superset-volumes
+
+    superset-worker-beat:
+        image: *superset-image
+        container_name: superset_worker_beat
+        command: ["/app/docker/docker-bootstrap.sh", "beat"]
+        env_file: .env
+        restart: unless-stopped
+        depends_on: *superset-depends-on
+        user: "root"
+        volumes: *superset-volumes
 
 volumes:
     postgres-db-volume:
     mysql-db-volume:
+    superset_home:
