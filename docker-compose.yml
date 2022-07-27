@@ -67,15 +67,22 @@ x-airflow-common: &airflow-common
         postgres:
             condition: service_healthy
 
+x-redash-service: &redash-service
+    image: redash/redash:8.0.0.b32245
+    depends_on:
+        - postgres
+        - redis
+    env_file: .env
+    restart: always
+
 x-superset-image: &superset-image apache/superset:${TAG:-latest-dev}
 x-superset-depends-on: &superset-depends-on
     - postgres
     - redis
 x-superset-volumes:
     &superset-volumes # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+    - ./superset:/app/docker
     - superset_home:/app/superset_home
-    - ./docker-bootstrap.sh:/app/docker/docker-bootstrap.sh
-    - ./docker-init.sh:/app/docker/docker-init.sh
 
 services:
     postgres:
@@ -104,7 +111,7 @@ services:
         <<: *airflow-common
         command: webserver
         ports:
-            - 8080:8080
+            - "8080:8080"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
             interval: 10s
@@ -243,8 +250,47 @@ services:
             - -c
             - airflow
 
+    server:
+        <<: *redash-service
+        command: server
+        ports:
+            - "5000:5000"
+        environment:
+            REDASH_WEB_WORKERS: 4
+
+    scheduler:
+        <<: *redash-service
+        command: scheduler
+        environment:
+            QUEUES: "celery"
+            WORKERS_COUNT: 1
+
+    scheduled_worker:
+        <<: *redash-service
+        command: worker
+        environment:
+            QUEUES: "scheduled_queries,schemas"
+            WORKERS_COUNT: 1
+
+    adhoc_worker:
+        <<: *redash-service
+        command: worker
+        environment:
+            QUEUES: "queries"
+            WORKERS_COUNT: 2
+
     redis:
         image: redis:5.0-alpine
+        restart: always
+
+    nginx:
+        image: redash/nginx:latest
+        ports:
+            - "80:80"
+        depends_on:
+            - server
+        links:
+            - server:redash
         restart: always
 
     superset:
@@ -287,6 +333,15 @@ services:
         depends_on: *superset-depends-on
         user: "root"
         volumes: *superset-volumes
+
+    adminer:
+        image: adminer:latest
+        container_name: adminer
+        environment:
+            ADMINER_DEFAULT_SERVER: mysql
+        restart: always
+        ports:
+            - "7777:8080"
 
 volumes:
     postgres-db-volume:
