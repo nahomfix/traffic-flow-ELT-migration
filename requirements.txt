@@ -1,1 +1,2 @@
-dbt-postgres==1.1.1
+dbt-postgres==1.0.0
+dbt-mysql==1.0.0
