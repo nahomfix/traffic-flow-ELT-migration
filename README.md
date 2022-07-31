@@ -1,12 +1,12 @@
 # Traffic Flow ELT Migration
 
-A data pipeline for Extracting, Loading and Transforming traffic flow data
+A migration of a data pipeline for Extracting, Loading and Transforming traffic flow data to a new stack
 
 <p align="center">
   <h3 align="center">Data Engineering Traffic Flow Drone Data</h3>
 
   <p align="center">
-    A fully dockerized ELT pipeline using PostgreSQL, dbt, Apache Airflow, and Redash.
+    A fully dockerized migration ELT pipeline using MySQL, dbt, Apache Airflow, and Apache Superset.
     <br />
     <a href="#about-the-project"><strong>Explore the docs »</strong></a>
     <br />
@@ -44,16 +44,16 @@ A data pipeline for Extracting, Loading and Transforming traffic flow data
 
 ![ELT](screenshots/migration.png)
 
-A completely dockerized ELT pipeline with PostgreSQL for data storage, Airflow for automation and orchestration, DBT for data transformation, and a Redash dashboard connected to the data warehouse.
+A completely dockerized ELT pipeline with MySQL for data storage, Airflow for automation and orchestration, DBT for data transformation, and an Apache Superset dashboard connected to the data warehouse.
 
 ### Built With
 
 Tech Stack used in this project
 
--   [PostgreSQL](https://dev.PostgreSQL.com/doc/)
+-   [MySQL](https://www.mysql.com/)
 -   [Apache Airflow](https://airflow.apache.org/docs/apache-airflow/stable/)
 -   [dbt](https://docs.getdbt.com/)
--   [Redash](https://redash.io/help/)
+-   [Apache Superset](https://superset.apache.org/)
 
 <!-- GETTING STARTED -->
 
@@ -70,12 +70,12 @@ Make sure you have docker installed on local machine.
 
 1. Clone the repo
     ```sh
-    git clone https://github.com/nahomfix/traffic-flow-ELT.git
+    git clone https://github.com/nahomfix/traffic-flow-ELT-migration.git
     ```
 2. Navigate to the folder
 
     ```sh
-    cd traffic-flow-ELT
+    cd traffic-flow-ELT-migration
     ```
 
 3. Build an airflow image
