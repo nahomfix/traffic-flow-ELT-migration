@@ -68,7 +68,7 @@ def dbt_to_df():
         index=False,
     )
 
-    df_dist = hook.get_pandas_df(sql="SELECT FROM distribution")
+    df_dist = hook.get_pandas_df(sql="SELECT * FROM distribution")
 
     df_dist.to_sql(
         "distribution",
