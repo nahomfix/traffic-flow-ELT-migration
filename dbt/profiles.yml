@@ -10,14 +10,14 @@ traffic_flow:
             dbname: dev
             schema: public
             threads: 4
-            
-    target: superset
-    outputs:
-        superset:
-            type: mysql
-            server: host.docker.internal
-            username: superset
-            password: superset
-            port: 3306
-            schema: superset
-            ssl_disabled: True
+
+    # target: superset
+    # outputs:
+    #     superset:
+    #         type: mysql
+    #         server: host.docker.internal
+    #         username: superset
+    #         password: superset
+    #         port: 3306
+    #         schema: superset
+    #         ssl_disabled: True

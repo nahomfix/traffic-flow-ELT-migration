@@ -37,6 +37,83 @@ def db_to_df():
     )
 
 
+def dbt_to_df():
+    hook = PostgresHook(postgres_conn_id="traffic_flow_dev")
+    m_hook = MySqlHook(mysql_conn_id="traffic_flow_mysql")
+    conn = m_hook.get_sqlalchemy_engine()
+    df_taxi = hook.get_pandas_df(sql="SELECT * FROM taxis")
+
+    df_taxi.to_sql(
+        "taxis",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_bus = hook.get_pandas_df(sql="SELECT * FROM buses")
+
+    df_bus.to_sql(
+        "buses",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_cars = hook.get_pandas_df(sql="SELECT * FROM cars")
+
+    df_cars.to_sql(
+        "cars",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_dist = hook.get_pandas_df(sql="SELECT FROM distribution")
+
+    df_dist.to_sql(
+        "distribution",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_h_veh = hook.get_pandas_df(sql="SELECT * FROM heavy_vehicles")
+
+    df_h_veh.to_sql(
+        "heavy_vehicles",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_least = hook.get_pandas_df(sql="SELECT * FROM least_avg_speed")
+
+    df_least.to_sql(
+        "least_avg_speed",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_m_veh = hook.get_pandas_df(sql="SELECT * FROM medium_vehicles")
+
+    df_m_veh.to_sql(
+        "medium_vehicles",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+    df_motor = hook.get_pandas_df(sql="SELECT * FROM motorcycles")
+
+    df_motor.to_sql(
+        "motorcycles",
+        con=conn,
+        if_exists="replace",
+        index=False,
+    )
+
+
 dag = DAG(
     "migration_dag",
     start_date=datetime.today(),
@@ -79,4 +156,8 @@ with dag:
 
     migration = PythonOperator(task_id="migration", python_callable=db_to_df)
 
-    start >> migration
+    migration_dbt = PythonOperator(
+        task_id="migration_dbt", python_callable=dbt_to_df
+    )
+
+    start >> migration >> migration_dbt
